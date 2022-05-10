@@ -78,16 +78,8 @@ class BayesianMNL:
                 self.__calc_latent(q)
             
             self.beta_hist.append(copy(self.beta))
-            self.test1.append(copy(self.beta[0,0]))
-            self.test2.append(copy(self.beta[2,2]))
-            
             self.lmbda_hist.append(copy(self.lmbda))
             self.Z_hist.append(copy(self.Z))
-        
-        plt.figure(1)
-        plt.plot(self.test1)
-        plt.figure(2)
-        plt.plot(self.test2)
         
         if full_output:
             return np.array(self.beta_hist)
@@ -145,30 +137,22 @@ class BayesianMNL:
     
     
     #Custom truncated logistic sampling
-    def __truncated_logistic(self, means, Y):    
+    def __truncated_logistic(self, means, Y): 
         vec = []
-        
         for t in range(len(Y)):
             if Y[t] == 1:
-                switch = True
-                while switch:
-                    prop = np.random.logistic(loc = means[t], scale = 1)
-                    if prop > 0:
-                        switch = False
-                        vec.append(prop)
+                U = np.random.uniform(low=self.__inv_logit(-means[t]), high = 1)
             else:
-                switch = True
-                while switch:
-                    prop = np.random.logistic(loc = means[t], scale = 1)
-                    if prop <= 0:
-                        switch = False
-                        vec.append(prop)
-        
+                U = np.random.uniform(low = 0, high=self.__inv_logit(-means[t]))
+                
+            vec.append(self.__logit(U) + means[t])
+            
         return np.array(vec)
     
     #Assuming unimodality
     def __sample_lmbda(self, r2, size = 1, num_points = 1000, 
                        radius = 5, epsilon_tol = 1e-4):
+
         mode = minimize_scalar(fun = lambda x : -self.__conditional_lmbda_pdf(x, r2),
                                bounds = (0,1000), method = 'bounded').x
         grid = np.linspace(max(mode - radius, epsilon_tol), mode + radius, num_points)
@@ -207,6 +191,11 @@ class BayesianMNL:
         acc /= acc.sum()
         return acc
     
+    def __inv_logit(self, x):
+        return 1/(1+ np.exp(-x))
+    
+    def __logit(self,x, tol = 1e-6):
+        return np.log(x/(1-x))
 
 
 
