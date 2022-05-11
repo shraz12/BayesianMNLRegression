@@ -7,7 +7,7 @@ with open(path) as fp:
 
 if __name__ == "__main__":
     setup(
-        name="BayesianLogitRegression",
+        name="BayesianMNLRegression",
         version="0.0.1",
         description="Fit a Bayesian logit regression model to your data",
         url="#",
